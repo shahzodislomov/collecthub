@@ -1,13 +1,70 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  collections Collection[]
+  reviews     Review[]
+}
+
+model Collection {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  isPublic    Boolean  @default(false)
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items   Item[]
+  reviews Review[]
+
+  @@index([ownerId])
+  @@index([isPublic, createdAt])
+}
+
+model Item {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  url          String?
+  imageUrl     String?
+  collectionId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@index([collectionId])
+  @@index([createdAt])
+}
+
+model Review {
+  id           String   @id @default(uuid())
+  rating       Int
+  comment      String?
+  authorId     String
+  collectionId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([authorId, collectionId])
+  @@index([collectionId])
+  @@index([authorId])
 }

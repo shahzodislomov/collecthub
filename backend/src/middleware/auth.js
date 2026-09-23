@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken"
 
 export function authenticate(req, res, next){
     const authHeader = req.headers.authorization;
-    if(!authHeader || !authHeader.startswith("Bearer ")){
+    if(!authHeader || !authHeader.startsWith("Bearer ")){
         return res.status(401).json({
             success: false,
             message: "Authentication token missing or invalid"
@@ -26,3 +26,5 @@ export function authenticate(req, res, next){
         })
     }
 }
+
+module.exports = { authenticate }

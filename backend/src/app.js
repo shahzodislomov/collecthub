@@ -1,26 +1,68 @@
-const express = reuqire('express');
+import express from "express";
+import helmet from "helmet";
+import cors from "cors";
+import morgan from "morgan";
+import cookieParser from "cookie-parser";
+import { rateLimit } from "express-rate-limit";
+import { env } from "./config/env.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+
 const app = express();
-const helmet = require('helmet')
-const cors = require('cors')
-const morgan = require('morgan')
-const cookieParser = require('cookie-parser');
-const { errorHandler } = require('./middleware/errorHandler');
-
+app.disable("x-powered-by");
 app.use(helmet());
-app.use(cors({
-    origin: process.env.CLIENT_URL,
-    credentials: true
-}));
-app.use(morgan('dev'));
-app.use(express.json())
-app.use(cookieParser())
+app.use(
+    cors({
+        origin: env.CORS_ORIGIN,
+        credentials: true,
+    })
+);
+if (env.NODE_ENV !== "test") {
+    app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
+}
+app.use(express.json({ limit: "100kb" }));
+app.use(
+    express.urlencoded({
+        extended: true,
+        limit: "100kb",
+    })
+);
+app.use(cookieParser());
 
-app.get('/api/health', (req, res) => {
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 100,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    message: {
+        success: false,
+        error: {
+            code: "RATE_LIMIT_EXCEEDED",
+            message: "Too many requests. Please try again later.",
+        },
+    },
+});
+
+app.use("/api", apiLimiter);
+app.get("/api/health", (req, res) => {
     res.status(200).json({
         success: true,
-        message: 'Server is running'
-    })
-})
+        message: "Server is running",
+        timestamp: new Date().toISOString(),
+    });
+});
 
-app.use(errorHandler)
+// API routes will be mounted here.
+
+app.use((req, res, next) => {
+    const error = new Error(
+        `Route not found: ${req.method} ${req.originalUrl}`
+    );
+
+    error.statusCode = 404;
+    error.code = "ROUTE_NOT_FOUND";
+
+    next(error);
+});
+
+app.use(errorHandler);
 export default app;

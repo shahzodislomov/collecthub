@@ -1,0 +1,14 @@
+{
+    "watch": [
+        "src"
+    ],
+    "ext": "js",
+    "ignore": [
+        "src/**/*.test.js",
+        "node_modules",
+        "prisma",
+        "coverage"
+    ],
+    "delay": 500,
+    "signal": "SIGTERM"
+}
