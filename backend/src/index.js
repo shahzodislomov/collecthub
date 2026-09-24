@@ -1,7 +1,7 @@
 import app from "./app.js";
 import { env } from "./config/env.js";
 import { connectDatabase, disconnectDatabase, prisma } from "./config/prisma.js"
-
+let isShuttingDown = false
 let server;
 
 async function startServer() {

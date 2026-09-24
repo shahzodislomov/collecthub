@@ -2,10 +2,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 
-import prisma from "../config/prisma.js";
+import { prisma } from "../config/prisma.js";
 
 const signupSchema = z.object({
-  name: z.string().trim().min(2).max(50),
+  username: z.string().trim().min(2).max(50),
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(8).max(72),
 });
@@ -26,7 +26,7 @@ function createToken(userId) {
 function publicUser(user) {
   return {
     id: user.id,
-    name: user.name,
+    username: user.username,
     email: user.email,
     createdAt: user.createdAt,
   };
@@ -44,7 +44,7 @@ export async function signup(req, res, next) {
       });
     }
 
-    const { name, email, password } = result.data;
+    const { username, email, password } = result.data;
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -61,7 +61,7 @@ export async function signup(req, res, next) {
 
     const user = await prisma.user.create({
       data: {
-        name,
+        username,
         email,
         passwordHash,
       },

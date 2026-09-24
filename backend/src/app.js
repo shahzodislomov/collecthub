@@ -6,6 +6,8 @@ import cookieParser from "cookie-parser";
 import { rateLimit } from "express-rate-limit";
 import { env } from "./config/env.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import authRoutes from "./routes/auth.js";
+import itemRoutes from "./routes/items.js";
 
 const app = express();
 app.disable("x-powered-by");
@@ -50,8 +52,8 @@ app.get("/api/health", (req, res) => {
         timestamp: new Date().toISOString(),
     });
 });
-
-// API routes will be mounted here.
+app.use("/api/auth", authRoutes);
+app.use("/api/items", itemRoutes);
 
 app.use((req, res, next) => {
     const error = new Error(
