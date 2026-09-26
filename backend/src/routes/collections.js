@@ -10,10 +10,10 @@ import { authenticate } from "../middleware/auth.js";
 
 const router = Router()
 
-router.post("/", authenticate, createCollection);
-router.get("/", authenticate, getMyCollections);
-router.get("/:id", authenticate, getCollectionById);
-router.patch("/:id", authenticate, updateCollection);
-router.delete("/:id", authenticate, deleteCollection);
+router.post("/collections", authenticate, createCollection);
+router.get("/collections", authenticate, getMyCollections);
+router.get("/collections:id", authenticate, getCollectionById);
+router.patch("/collections:id", authenticate, updateCollection);
+router.delete("/collections:id", authenticate, deleteCollection);
 
 export default router

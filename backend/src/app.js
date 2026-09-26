@@ -9,6 +9,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import authRoutes from "./routes/auth.js";
 import itemRoutes from "./routes/items.js";
 import collectionRoutes from "./routes/collections.js"
+import reviewRoutes from "./routes/reviews.js"
 
 const app = express();
 app.disable("x-powered-by");
@@ -53,10 +54,10 @@ app.get("/api/health", (req, res) => {
         timestamp: new Date().toISOString(),
     });
 });
-app.use("/api/auth", authRoutes);
-app.use("/api/items", itemRoutes);
-app.use("/api/collections", collectionRoutes)
-
+app.use("/api", authRoutes);
+app.use("/api", itemRoutes);
+app.use("/api", collectionRoutes)
+app.use("/api", reviewRoutes)
 app.use((req, res, next) => {
     const error = new Error(
         `Route not found: ${req.method} ${req.originalUrl}`
