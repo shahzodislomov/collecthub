@@ -10,6 +10,7 @@ import authRoutes from "./routes/auth.js";
 import itemRoutes from "./routes/items.js";
 import collectionRoutes from "./routes/collections.js"
 import reviewRoutes from "./routes/reviews.js"
+import searchRoutes from "./routes/search.js"
 
 const app = express();
 app.disable("x-powered-by");
@@ -58,6 +59,8 @@ app.use("/api", authRoutes);
 app.use("/api", itemRoutes);
 app.use("/api", collectionRoutes)
 app.use("/api", reviewRoutes)
+app.use("/api", searchRoutes)
+
 app.use((req, res, next) => {
     const error = new Error(
         `Route not found: ${req.method} ${req.originalUrl}`
