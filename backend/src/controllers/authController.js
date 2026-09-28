@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 
+import { env } from "../config/env.js";
 import { prisma } from "../config/prisma.js";
 
 const signupSchema = z.object({
@@ -14,6 +15,16 @@ const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(1),
 });
+
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required").max(72),
+    newPassword: z.string().min(8, "New password must be at least 8 characters").max(72),
+  })
+  .refine((data) => data.currentPassword !== data.newPassword, {
+    message: "New password must be different from your current password",
+    path: ["newPassword"],
+  });
 
 function createToken(userId) {
   return jwt.sign(
@@ -57,7 +68,7 @@ export async function signup(req, res, next) {
       });
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await bcrypt.hash(password, env.BCRYPT_ROUNDS);
 
     const user = await prisma.user.create({
       data: {
@@ -146,6 +157,61 @@ export async function getCurrentUser(req, res, next) {
     return res.status(200).json({
       success: true,
       user: publicUser(user),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function changePassword(req, res, next) {
+  try {
+    const result = changePasswordSchema.safeParse(req.body);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid password data",
+        errors: result.error.flatten().fieldErrors,
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { id: true, passwordHash: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      result.data.currentPassword,
+      user.passwordHash,
+    );
+
+    if (!passwordMatches) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(
+      result.data.newPassword,
+      env.BCRYPT_ROUNDS,
+    );
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully",
     });
   } catch (error) {
     next(error);
