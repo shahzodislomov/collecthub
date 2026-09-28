@@ -8,8 +8,8 @@ import { authenticate } from "../middleware/auth.js"
 
 const router = Router()
 
-router.get("/users/:username", getPublicProfile)
-router.patch("/users/me", authenticate, updateMyProfile)
-router.get("/users/:username/collections", getUserPublicCollections)
+router.get("/:username", getPublicProfile);
+router.get("/:username/collections", getUserPublicCollections);
+router.patch("/me", authenticate, updateMyProfile);
 
 export default router
