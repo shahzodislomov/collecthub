@@ -11,6 +11,7 @@ import itemRoutes from "./routes/items.js";
 import collectionRoutes from "./routes/collections.js"
 import reviewRoutes from "./routes/reviews.js"
 import searchRoutes from "./routes/search.js"
+import userRoutes from "./routes/users.js"
 
 const app = express();
 app.disable("x-powered-by");
@@ -55,11 +56,9 @@ app.get("/api/health", (req, res) => {
         timestamp: new Date().toISOString(),
     });
 });
-app.use("/api", authRoutes);
-app.use("/api", itemRoutes);
-app.use("/api", collectionRoutes)
-app.use("/api", reviewRoutes)
-app.use("/api", searchRoutes)
+const routes = [authRoutes,itemRoutes,collectionRoutes,reviewRoutes,searchRoutes,userRoutes]
+
+routes.forEach(route => app.use("/api", route))
 
 app.use((req, res, next) => {
     const error = new Error(
