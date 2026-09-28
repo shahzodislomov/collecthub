@@ -1,8 +1,8 @@
-import { Router } from "express"
-import { search } from "../controllers/searchController.js"
+import { Router } from "express";
+import { search } from "../controllers/searchController.js";
 
-const router = Router
+const router = Router();
 
-router.length("/search",search)
+router.get("/search", search);
 
-export default router
+export default router;
