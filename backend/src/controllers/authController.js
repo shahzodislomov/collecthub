@@ -26,6 +26,11 @@ const changePasswordSchema = z
     path: ["newPassword"],
   });
 
+const changeEmailSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required").max(72),
+  newEmail: z.string().trim().toLowerCase().email("A valid email is required"),
+});
+
 function createToken(userId) {
   return jwt.sign(
     { sub: userId },
@@ -214,6 +219,81 @@ export async function changePassword(req, res, next) {
       message: "Password changed successfully",
     });
   } catch (error) {
+    next(error);
+  }
+}
+
+export async function changeEmail(req, res, next) {
+  try {
+    const result = changeEmailSchema.safeParse(req.body);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email change data",
+        errors: result.error.flatten().fieldErrors,
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { id: true, email: true, passwordHash: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(
+      result.data.currentPassword,
+      user.passwordHash,
+    );
+    if (!passwordMatches) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    if (result.data.newEmail === user.email) {
+      return res.status(400).json({
+        success: false,
+        message: "New email must be different from your current email",
+      });
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: result.data.newEmail },
+      select: { id: true },
+    });
+    if (existingUser) {
+      return res.status(409).json({
+        success: false,
+        message: "An account with this email already exists",
+      });
+    }
+
+    const userWithNewEmail = await prisma.user.update({
+      where: { id: user.id },
+      data: { email: result.data.newEmail },
+      select: { id: true, username: true, email: true, createdAt: true },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Email changed successfully",
+      user: userWithNewEmail,
+    });
+  } catch (error) {
+    if (error.code === "P2002") {
+      return res.status(409).json({
+        success: false,
+        message: "An account with this email already exists",
+      });
+    }
     next(error);
   }
 }

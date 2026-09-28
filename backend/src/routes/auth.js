@@ -4,6 +4,7 @@ import {
   login,
   getCurrentUser,
   changePassword,
+  changeEmail,
 } from "../controllers/authController.js";
 import { authenticate } from "../middleware/auth.js";
 
@@ -13,5 +14,6 @@ router.post("/signup", signup);
 router.post("/login", login);
 router.get("/me", authenticate, getCurrentUser);
 router.patch("/password", authenticate, changePassword);
+router.patch("/email", authenticate, changeEmail);
 
 export default router;
