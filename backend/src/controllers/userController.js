@@ -1,5 +1,6 @@
-import { success, z } from "zod";
-import { prisma } from "../config/prisma";
+import { z } from "zod";
+
+import { prisma } from "../config/prisma.js";
 
 const updateProfileSchema = z
     .object({
@@ -11,129 +12,146 @@ const updateProfileSchema = z
         message: "At least one field must be provided",
     });
 
+const usernameParamsSchema = z.object({
+    username: z.string().trim().min(1).max(50),
+});
+
+const paginationSchema = z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+function validationError(res, message, error) {
+    return res.status(400).json({
+        success: false,
+        message,
+        errors: error.flatten().fieldErrors,
+    });
+}
+
 export async function getPublicProfile(req, res, next) {
     try {
-        const { username } = req.params
+        const result = usernameParamsSchema.safeParse(req.params);
+        if (!result.success) {
+            return validationError(res, "Invalid username", result.error);
+        }
+
         const user = await prisma.user.findUnique({
-            where: {
-                username
-            },
+            where: { username: result.data.username },
             select: {
                 id: true,
                 username: true,
+                bio: true,
+                avatarUrl: true,
                 createdAt: true,
                 _count: {
                     select: {
-                        collections: {
-                            where: { isPublic: true },
-                        },
+                        collections: { where: { isPublic: true } },
                     },
                 },
-            }
-        })
+            },
+        });
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            })
+            return res.status(404).json({ success: false, message: "User not found" });
         }
+
         return res.status(200).json({
             success: true,
             user: {
                 id: user.id,
                 username: user.username,
+                bio: user.bio,
+                avatarUrl: user.avatarUrl,
                 createdAt: user.createdAt,
                 publicCollectionCount: user._count.collections,
-            }
-        })
+            },
+        });
     } catch (error) {
-        next(error)
+        next(error);
     }
 }
 
 export async function updateMyProfile(req, res, next) {
     try {
-        const result = updateProfileSchema.safeParse(req.body)
+        const result = updateProfileSchema.safeParse(req.body);
         if (!result.success) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid profile data",
-                errors: result.error.flatten().fieldErrors,
-            })
+            return validationError(res, "Invalid profile data", result.error);
         }
+
         const user = await prisma.user.update({
-            where: {
-                id: req.userId,
-            },
+            where: { id: req.userId },
             data: result.data,
             select: {
                 id: true,
                 username: true,
+                bio: true,
+                avatarUrl: true,
+                email: true,
                 createdAt: true,
-            }
-        })
+                updatedAt: true,
+            },
+        });
+
         return res.status(200).json({
             success: true,
-            message: "Profile updated carefully",
-        })
+            message: "Profile updated successfully",
+            user,
+        });
     } catch (error) {
         if (error.code === "P2002") {
             return res.status(409).json({
                 success: false,
-                message: "Username is already taken"
-            })
+                message: "Username is already taken",
+            });
         }
-        next(error)
+        if (error.code === "P2025") {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        next(error);
     }
 }
 
 export async function getUserPublicCollections(req, res, next) {
     try {
-        const { username } = req.params
-        const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-        const limit = Math.min(100, parseInt(req.query.limit, 10) || 20);
-        const skip = (page - 1) * limit
+        const paramsResult = usernameParamsSchema.safeParse(req.params);
+        const queryResult = paginationSchema.safeParse(req.query);
+        if (!paramsResult.success) {
+            return validationError(res, "Invalid username", paramsResult.error);
+        }
+        if (!queryResult.success) {
+            return validationError(res, "Invalid pagination", queryResult.error);
+        }
 
         const user = await prisma.user.findUnique({
-            where: {
-                username
-            }
-        })
+            where: { username: paramsResult.data.username },
+            select: { id: true, username: true },
+        });
         if (!user) {
-            return res.status(400).json({
-                success: false,
-                message: "user not found",
-            })
+            return res.status(404).json({ success: false, message: "User not found" });
         }
+
+        const { page, limit } = queryResult.data;
+        const where = { ownerId: user.id, isPublic: true };
         const [collections, total] = await Promise.all([
             prisma.collection.findMany({
-                where: {
-                    ownerId: user.id,
-                    isPublic: true
-                },
+                where,
                 select: {
                     id: true,
                     title: true,
                     description: true,
                     createdAt: true,
-                    _count: {
-                        select: { items: true }
-                    }
+                    _count: { select: { items: true } },
                 },
-                skip,
+                skip: (page - 1) * limit,
                 take: limit,
-                orderBy: { createdAt: "desc" }
+                orderBy: { createdAt: "desc" },
             }),
-            prisma.collection.count({
-                where: {
-                    ownerId: user.userId,
-                    isPublic: true
-                }
-            })
-        ])
-        return res.json({
+            prisma.collection.count({ where }),
+        ]);
+
+        return res.status(200).json({
             success: true,
-            username,
+            username: user.username,
             collections,
             pagination: {
                 page,
@@ -141,8 +159,8 @@ export async function getUserPublicCollections(req, res, next) {
                 total,
                 pages: Math.ceil(total / limit),
             },
-        })
+        });
     } catch (error) {
-        next(error)
+        next(error);
     }
 }
