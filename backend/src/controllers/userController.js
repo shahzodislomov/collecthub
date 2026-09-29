@@ -164,3 +164,83 @@ export async function getUserPublicCollections(req, res, next) {
         next(error);
     }
 }
+
+export async function followUser(req, res, next) {
+    try {
+        const paramsResult = usernameParamsSchema.safeParse(req.params)
+        if (!paramsResult.success) {
+            return validationError(res, "invalid username", paramsResult.error)
+        }
+        const targetUser = await prisma.user.findUnique({
+            where: { username: paramsResult.data.username }
+        })
+        if (!targetUser) {
+            return res.status(404).json({
+                success: false,
+                message: "user not found"
+            })
+        }
+        if (targetUser.id === req.userId) {
+            return res.status(400).json({
+                success: false,
+                message: "you cannot follow yourself"
+            })
+        }
+        const follow = await prisma.follows.create({
+            data: {
+                followerId: req.userId,
+                followingId: targetUser.id
+            }
+        })
+        return res.status(200).json({
+            success: true,
+            message: "user followed successfully",
+            follow
+        })
+    } catch (error) {
+        if (error.code === "P2002") {
+            return res.status(400).json({
+                success: false,
+                message: "you are already following this user"
+            })
+        }
+        next(error)
+    }
+}
+export async function unfollowUser(req, res, next) {
+    try {
+        const paramsResult = usernameParamsSchema.safeParse(req.params)
+        if (!paramsResult.success) {
+            return validationError(res, "invalid username", paramsResult.error)
+        }
+        const targetUser = await prisma.user.findUnique({
+            where: { username: paramsResult.data.username }
+        })
+        if (!targetUser) {
+            return res.status(404).json({
+                success: false,
+                message: "user not found"
+            })
+        }
+        const unfollow = await prisma.follows.delete({
+            where:{
+                followerId_followingId:{
+                    followerId:req.userId,
+                    followingId:targetUser.id
+                }
+            }
+        })
+        return res.status(200).json({
+            success: true,
+            message: `successfully unfollowed ${targetUser.username}`
+        })    
+    } catch (error) {
+        if(error.code === "P2025"){
+            return res.status(400).json({
+                success:false,
+                message:"you are not following this user"
+            })
+        }
+        next(error)
+    }
+}

@@ -18,6 +18,10 @@ model User {
   bio       String?
   collections Collection[]
   reviews     Review[]
+  followers Follows[] @relation("following")
+  following Follows[] @relation("follower")
+  shares    Share[]
+  habitLogs HabitLog[]
 }
 
 model Collection {
@@ -35,6 +39,7 @@ model Collection {
 
   @@index([ownerId])
   @@index([isPublic, createdAt])
+  shares Share[]
 }
 
 model Item {
@@ -51,6 +56,10 @@ model Item {
 
   @@index([collectionId])
   @@index([createdAt])
+  type      String     @default("link")
+  metadata  Json?      
+  tags      Tag[]
+  habitLogs HabitLog[]
 }
 
 model Review {
@@ -68,4 +77,44 @@ model Review {
   @@unique([authorId, collectionId])
   @@index([collectionId])
   @@index([authorId])
+}
+model Follows {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  @@id([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+model Share {
+  id           String   @id @default(uuid())
+  collectionId String
+  userId       String
+  permission   String   @default("read") // "read", "edit"
+  createdAt    DateTime @default(now())
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([collectionId, userId])
+  @@index([userId])
+}
+model Tag {
+  id    String @id @default(uuid())
+  name  String @unique
+  items Item[]
+}
+model HabitLog {
+  id        String   @id @default(uuid())
+  itemId    String
+  userId    String
+  date      DateTime 
+  completed Boolean  @default(false)
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([itemId, userId, date])
+  @@index([userId])
 }
