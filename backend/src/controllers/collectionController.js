@@ -6,7 +6,10 @@ const collectionFields = {
     description: z.string().trim().max(2000).optional(),
     isPublic: z.boolean().optional(),
 };
-
+const shareSchema = z.object({
+    username: z.string().min(1),
+    permission: z.enum(["read", "edit"]).default("read"),
+})
 const createCollectionSchema = z.object(collectionFields)
 
 const updateCollectionSchema = z
@@ -162,5 +165,85 @@ export async function getCollectionById(req, res, next) {
         })
     } catch (error) {
         next(error)
+    }
+}
+export async function shareCollections(req, res, next) {
+    try {
+        const paramsResult = collectionIdSchema.safeParse(req.params);
+        const bodyResult = shareSchema.safeParse(req.body);
+        if (!paramsResult.success) {
+            return validationError(
+                res,
+                "Invalid collection ID",
+                paramsResult.error
+            );
+        }
+        if (!bodyResult.success) {
+            return validationError(
+                res,
+                "Invalid share data",
+                bodyResult.error
+            );
+        }
+        const { id: collectionId } = paramsResult.data;
+        const { username, permission } = bodyResult.data;
+        const collection = await prisma.collection.findUnique({
+            where: {
+                id: collectionId
+            },
+            select: {
+                id: true,
+                ownerId: true
+            }
+        });
+        if (!collection) {
+            return res.status(404).json({
+                success: false,
+                message: "Collection not found"
+            });
+        }
+        if (collection.ownerId !== req.userId) {
+            return res.status(403).json({
+                success: false,
+                message: "You do not own this collection"
+            });
+        }
+        const targetUser = await prisma.user.findUnique({
+            where: {
+                username
+            },
+            select: {
+                id: true
+            }
+        });
+        if (!targetUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+        const share = await prisma.share.upsert({
+            where: {
+                collectionId_userId: {
+                    collectionId,
+                    userId: targetUser.id
+                }
+            },
+            update: {
+                permission
+            },
+            create: {
+                collectionId,
+                userId: targetUser.id,
+                permission
+            }
+        });
+        return res.status(200).json({
+            success: true,
+            message: `Collection shared with ${username}`,
+            share
+        });
+    } catch (error) {
+        next(error);
     }
 }
