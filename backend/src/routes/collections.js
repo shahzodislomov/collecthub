@@ -5,6 +5,7 @@ import {
     getCollectionById,
     updateCollection,
     deleteCollection,
+    shareCollections,
 } from "../controllers/collectionController.js"
 import { authenticate } from "../middleware/auth.js";
 
@@ -15,5 +16,5 @@ router.get("/collections", authenticate, getMyCollections);
 router.get("/collections:id", authenticate, getCollectionById);
 router.patch("/collections:id", authenticate, updateCollection);
 router.delete("/collections:id", authenticate, deleteCollection);
-
+router.post("/collections/:id/share", authenticate, shareCollections);
 export default router

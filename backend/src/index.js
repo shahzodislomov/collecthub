@@ -1,12 +1,15 @@
 import app from "./app.js";
 import { env } from "./config/env.js";
 import { connectDatabase, disconnectDatabase, prisma } from "./config/prisma.js"
+import { initCronJobs } from "./jobs/streakJob.js";
+
 let isShuttingDown = false
 let server;
 
 async function startServer() {
     try {
         await connectDatabase()
+        initCronJobs()
         server = app.listen(env.PORT, () => {
             console.log(`Server is running on port ${env.PORT} in ${env.NODE_ENV} mode`)
         })
@@ -18,7 +21,7 @@ async function startServer() {
 }
 
 async function shutdown(signal, error = null) {
-    if (isShuttingDown) return;
+    if (isShuttingDown) return; 
     isShuttingDown = true
     if (error) {
         console.error(`${signal}:`, error);
