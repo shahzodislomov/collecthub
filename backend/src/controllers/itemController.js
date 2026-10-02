@@ -1,13 +1,13 @@
 import { z } from "zod";
-
 import { prisma } from "../config/prisma.js";
+import { fetchOgData } from "../services/ogScraper.js";
 
 const itemFields = {
     title: z
         .string()
         .trim()
-        .min(1, "Title is required")
-        .max(200, "Title is too long"),
+        .max(200, "Title is too long")
+        .optional(),
     description: z
         .string()
         .trim()
@@ -25,7 +25,13 @@ const itemFields = {
 const createItemSchema = z.object({
     ...itemFields,
     collectionId: z.string().uuid("Collection ID must be a valid UUID"),
-});
+    type: z.enum(["link", "habit", "movie", "game"]),
+    tags: z.array(z.string()).optional(),
+    metadata: z.record(z.string()).optional(),
+}).refine(data => data.title || data.url, {
+    message: "You must provide either a title or a URL.",
+    path: ["title", "url"],
+})
 
 const updateItemSchema = z
     .object(itemFields)
@@ -56,7 +62,7 @@ export async function createItem(req, res, next) {
         if (!result.success) {
             return validationError(res, "Invalid item data", result.error);
         }
-        const { collectionId, ...itemData } = result.data;
+        const { collectionId, title, description, url, imageUrl, type, tags, metadata } = result.data;
         const collection = await prisma.collection.findFirst({
             where: { id: collectionId, ownerId: req.userId },
             select: { id: true },
@@ -67,8 +73,30 @@ export async function createItem(req, res, next) {
                 message: "Collection not found",
             });
         }
+        let finalTitle = title;
+        let finalDescription = description;
+        let finalImageUrl = imageUrl;
+
+        if (type === "link" && url) {
+            const ogData = await fetchOgData(url)
+            if (ogData) {
+                if (!finalTitle && ogData.title) finalTitle = ogData.title
+                if (!finalDescription && ogData.description) finalDescription = ogData.description
+                if (!finalImageUrl && ogData.imageUrl) finalImageUrl = ogData.imageUrl
+            }
+            if (!finalTitle) finalTitle = url ? new URL(url).hostname : "Untitled Item"
+        }
+        const itemData = {
+            title: finalTitle,
+            description: finalDescription,
+            url,
+            imageUrl: finalImageUrl,
+            type,
+            tags: tags && tags.length > 0 ? { connectOrCreate: tags.map(tag => ({ where: { name: tag.toLowerCase() }, create: { name: tag.toLowerCase() } })) } : undefined,
+            metadata,
+        }
         const item = await prisma.item.create({
-            data: { ...itemData, collectionId },
+            data: { ...itemData, collection: { connect: { id: collectionId } } },
         });
         return res.status(201).json({
             success: true,
