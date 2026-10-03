@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { prisma } from "../config/prisma.js";
+import { getIO } from "../config/socket.js";
 
 const reviewFields = {
     rating: z.number().int().min(1, "Rating must be at least 1").max(5, "Rating cannot exceed 5"),
@@ -78,6 +79,7 @@ export async function createReview(req, res, next) {
             },
             include: { author: { select: { id: true, username: true } } },
         });
+        getIO().to(paramsResult.data.collectionId).emit("new_review",{message:"new review added", review});
         return res.status(201).json({
             success: true,
             message: "Review submitted successfully",
@@ -87,7 +89,7 @@ export async function createReview(req, res, next) {
         if (error.code === "P2002") {
             return res.status(409).json({
                 success: false,
-                message: "You have already reviewed this collection",
+                message: "You have already reviewed this collection",   
             });
         }
         next(error);
