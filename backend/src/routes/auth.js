@@ -10,10 +10,10 @@ import { authenticate } from "../middleware/auth.js";
 
 const router = Router();
 
-router.post("/signup", signup);
-router.post("/login", login);
-router.get("/me", authenticate, getCurrentUser);
-router.patch("/password", authenticate, changePassword);
-router.patch("/email", authenticate, changeEmail);
+router.post("/auth/signup", signup);
+router.post("/auth/login", login);
+router.get("/auth/me", authenticate, getCurrentUser);
+router.patch("/auth/password", authenticate, changePassword);
+router.patch("/auth/email", authenticate, changeEmail);
 
 export default router;
