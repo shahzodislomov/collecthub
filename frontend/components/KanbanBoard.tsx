@@ -2,39 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { MoreHorizontal, Link as LinkIcon, Film, CheckSquare } from "lucide-react";
+import { MoreHorizontal, Link as LinkIcon, Film, CheckSquare, Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 
-// Types
-type Item = { id: string; content: string; type: "link" | "movie" | "habit" };
-type Column = { id: string; title: string; items: Item[] };
-type BoardData = { [key: string]: Column };
-
-const initialData: BoardData = {
-  todo: {
-    id: "todo",
-    title: "To Consume",
-    items: [
-      { id: "item-1", content: "Dune: Part Two", type: "movie" },
-      { id: "item-2", content: "Learn Next.js 15 Server Actions", type: "link" },
-      { id: "item-3", content: "Read 'Atomic Habits'", type: "habit" },
-    ],
-  },
-  in_progress: {
-    id: "in_progress",
-    title: "In Progress",
-    items: [
-      { id: "item-4", content: "React Query documentation", type: "link" },
-    ],
-  },
-  done: {
-    id: "done",
-    title: "Finished",
-    items: [
-      { id: "item-5", content: "Drink 2L Water", type: "habit" },
-      { id: "item-6", content: "Oppenheimer", type: "movie" },
-    ],
-  },
-};
+type Item = { id: string; title: string; url?: string; type: "link" | "movie" | "habit" };
+type Collection = { id: string; title: string; items: Item[] };
 
 const getIcon = (type: string) => {
   switch (type) {
@@ -46,74 +19,116 @@ const getIcon = (type: string) => {
 };
 
 export default function KanbanBoard() {
-  // Fix hydration issues by only rendering after mount
   const [isMounted, setIsMounted] = useState(false);
-  const [data, setData] = useState<BoardData>(initialData);
+  const [localCollections, setLocalCollections] = useState<Collection[]>([]);
+  const queryClient = useQueryClient();
+
+  const { data: collections, isLoading } = useQuery({
+    queryKey: ["collections"],
+    queryFn: async () => {
+      const res = await api.get("/collections");
+      return res.data.collections as Collection[];
+    }
+  });
+
+  // Sync local state when collections load
+  useEffect(() => {
+    if (collections) {
+      setLocalCollections(collections);
+    }
+  }, [collections]);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  const updateItemMutation = useMutation({
+    mutationFn: async ({ itemId, collectionId }: { itemId: string; collectionId: string }) => {
+      const res = await api.patch(`/item/${itemId}`, { collectionId });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["collections"] });
+    }
+  });
+
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
-    const { source, destination } = result;
+    const { source, destination, draggableId } = result;
 
     if (source.droppableId === destination.droppableId) {
-      // Moving in the same column
-      const column = data[source.droppableId];
-      const newItems = Array.from(column.items);
+      // Reordering in same column (optimistic UI)
+      const sourceColIndex = localCollections.findIndex(c => c.id === source.droppableId);
+      const newCollections = [...localCollections];
+      const column = { ...newCollections[sourceColIndex] };
+      const newItems = [...column.items];
+      
       const [removed] = newItems.splice(source.index, 1);
       newItems.splice(destination.index, 0, removed);
-
-      setData({
-        ...data,
-        [source.droppableId]: {
-          ...column,
-          items: newItems,
-        },
-      });
+      
+      column.items = newItems;
+      newCollections[sourceColIndex] = column;
+      setLocalCollections(newCollections);
     } else {
-      // Moving from one column to another
-      const sourceCol = data[source.droppableId];
-      const destCol = data[destination.droppableId];
-      const sourceItems = Array.from(sourceCol.items);
-      const destItems = Array.from(destCol.items);
-
+      // Moving to a new column
+      const sourceColIndex = localCollections.findIndex(c => c.id === source.droppableId);
+      const destColIndex = localCollections.findIndex(c => c.id === destination.droppableId);
+      
+      const newCollections = [...localCollections];
+      const sourceCol = { ...newCollections[sourceColIndex] };
+      const destCol = { ...newCollections[destColIndex] };
+      
+      const sourceItems = [...sourceCol.items];
+      const destItems = [...destCol.items];
+      
       const [removed] = sourceItems.splice(source.index, 1);
       destItems.splice(destination.index, 0, removed);
+      
+      sourceCol.items = sourceItems;
+      destCol.items = destItems;
+      
+      newCollections[sourceColIndex] = sourceCol;
+      newCollections[destColIndex] = destCol;
+      
+      setLocalCollections(newCollections);
 
-      setData({
-        ...data,
-        [source.droppableId]: {
-          ...sourceCol,
-          items: sourceItems,
-        },
-        [destination.droppableId]: {
-          ...destCol,
-          items: destItems,
-        },
-      });
+      // Persist to backend
+      updateItemMutation.mutate({ itemId: draggableId, collectionId: destination.droppableId });
     }
   };
 
   if (!isMounted) return null;
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  if (localCollections.length === 0) {
+    return (
+      <div className="text-center py-12 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl">
+        <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">No Collections Found</h3>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Create a collection above to start organizing items.</p>
+      </div>
+    );
+  }
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex flex-col lg:flex-row gap-6 w-full mt-8">
-        {Object.values(data).map((column) => (
-          <div key={column.id} className="flex-1 min-w-[280px]">
-            <div className="flex items-center justify-between mb-4 px-1">
-              <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+      <div className="flex gap-6 overflow-x-auto pb-8 snap-x">
+        {localCollections.map((column) => (
+          <div key={column.id} className="min-w-[320px] w-[320px] shrink-0 snap-center">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-lg text-zinc-900 dark:text-zinc-100">
                 {column.title}
-                <span className="text-xs font-medium bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 py-1 px-2 rounded-full">
-                  {column.items.length}
-                </span>
               </h3>
-              <button className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors">
-                <MoreHorizontal className="w-5 h-5" />
-              </button>
+              <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 px-2 py-1 rounded-full text-xs font-medium">
+                {column.items.length}
+              </span>
             </div>
 
             <Droppable droppableId={column.id}>
@@ -121,10 +136,10 @@ export default function KanbanBoard() {
                 <div
                   {...provided.droppableProps}
                   ref={provided.innerRef}
-                  className={`min-h-[200px] p-3 rounded-2xl transition-all border ${
+                  className={`min-h-[500px] p-3 rounded-2xl transition-colors ${
                     snapshot.isDraggingOver 
-                      ? "bg-zinc-100 dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700 shadow-inner" 
-                      : "bg-zinc-50/50 dark:bg-zinc-950/50 border-dashed border-zinc-200 dark:border-zinc-800"
+                      ? "bg-blue-50 dark:bg-blue-900/10 border-2 border-blue-500/20" 
+                      : "bg-zinc-100/50 dark:bg-zinc-900/50 border-2 border-transparent"
                   }`}
                 >
                   {column.items.map((item, index) => (
@@ -136,21 +151,31 @@ export default function KanbanBoard() {
                           {...provided.dragHandleProps}
                           style={{
                             ...provided.draggableProps.style,
+                            transform: snapshot.isDragging 
+                              ? `${provided.draggableProps.style?.transform} rotate(2deg) scale(1.02)` 
+                              : provided.draggableProps.style?.transform
                           }}
-                          className={`group p-4 mb-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-start gap-3 select-none ${
-                            snapshot.isDragging ? "shadow-2xl ring-2 ring-blue-500/20 rotate-2 scale-[1.02] z-50" : "shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700"
+                          className={`mb-3 p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm cursor-grab active:cursor-grabbing transition-shadow ${
+                            snapshot.isDragging ? "shadow-2xl ring-2 ring-blue-500/20 z-50 relative" : "hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700"
                           }`}
                         >
-                          <div className="mt-0.5 p-1.5 rounded-md bg-zinc-100 dark:bg-zinc-800 transition-colors group-hover:bg-white dark:group-hover:bg-zinc-900 border border-transparent group-hover:border-zinc-200 dark:group-hover:border-zinc-700">
-                            {getIcon(item.type)}
-                          </div>
-                          <div>
-                            <p className="font-medium text-zinc-800 dark:text-zinc-200 text-sm leading-tight">
-                              {item.content}
-                            </p>
-                            <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 dark:text-zinc-500 mt-2 block">
-                              {item.type}
-                            </span>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-zinc-900 dark:text-zinc-100 text-sm leading-snug break-words">
+                                {item.title}
+                              </p>
+                              {item.url && (
+                                <p className="text-xs text-blue-500 mt-1 truncate max-w-[200px]">
+                                  {new URL(item.url).hostname}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 text-zinc-400">
+                              {getIcon(item.type)}
+                              <button className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}

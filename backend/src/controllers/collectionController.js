@@ -126,6 +126,11 @@ export async function getMyCollections(req, res, next) {
         const collections = await prisma.collection.findMany({
             where: {
                 ownerId: req.userId
+            },
+            include: {
+                items: {
+                    orderBy: { createdAt: "desc" }
+                }
             }
         })
         return res.status(200).json({

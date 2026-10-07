@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import AddItemModal from "@/components/AddItemModal";
 
 export default function MainLayout({ children }: { children: ReactNode }) {
   return (
@@ -13,7 +14,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         {/* Navigation links will go here */}
       </aside>
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col relative">
         {/* Top Navbar for Mobile/Search will go here */}
         <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl flex items-center px-6">
           <span className="md:hidden font-bold">CollectHub</span>
@@ -23,6 +24,9 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         <main className="flex-1 p-6 overflow-auto">
           {children}
         </main>
+        
+        {/* Global Floating Action Button & Modal */}
+        <AddItemModal />
       </div>
     </div>
   );

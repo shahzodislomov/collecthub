@@ -21,6 +21,7 @@ export default function LoginPage() {
       return res.data;
     },
     onSuccess: (data) => {
+      localStorage.setItem("token", data.token);
       login(data.user);
       router.push("/");
     },

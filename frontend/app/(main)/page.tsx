@@ -4,6 +4,7 @@ import { useAuthStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import KanbanBoard from "@/components/KanbanBoard";
+import CreateCollectionModal from "@/components/CreateCollectionModal";
 
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuthStore();
@@ -31,15 +32,19 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold tracking-tight">
           Welcome back, {user?.username}!
         </h1>
-        <button 
-          onClick={() => {
-            useAuthStore.getState().logout();
-            router.push("/login");
-          }}
-          className="px-4 py-2 text-sm font-medium text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
-        >
-          Logout
-        </button>
+        <div className="flex items-center gap-3">
+          <CreateCollectionModal />
+
+          <button
+            onClick={() => {
+              useAuthStore.getState().logout();
+              router.push("/login");
+            }}
+            className="px-4 py-2 text-sm font-medium text-white bg-zinc-900 dark:bg-white dark:text-zinc-900 rounded-lg hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
