@@ -7,30 +7,33 @@ import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
+  const loginMutation = useMutation({
+    mutationFn: async () => {
       const res = await api.post("/auth/login", { email, password });
-      login(res.data.user);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      login(data.user);
       router.push("/");
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Invalid credentials");
-    } finally {
-      setLoading(false);
-    }
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    loginMutation.mutate();
   };
+
+  const errorMessage = loginMutation.isError 
+    ? (loginMutation.error as any)?.response?.data?.message || "Invalid credentials" 
+    : null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4 relative overflow-hidden">
@@ -52,13 +55,13 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
+          {errorMessage && (
             <motion.div 
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               className="p-3 text-sm text-red-500 bg-red-100 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg"
             >
-              {error}
+              {errorMessage}
             </motion.div>
           )}
           
@@ -88,10 +91,10 @@ export default function LoginPage() {
 
           <button 
             type="submit" 
-            disabled={loading}
+            disabled={loginMutation.isPending}
             className="w-full py-2.5 px-4 bg-gradient-to-r from-blue-500 to-violet-500 hover:from-blue-600 hover:to-violet-600 text-white font-medium rounded-lg transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 flex items-center justify-center gap-2 mt-6 shadow-lg shadow-blue-500/25"
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
+            {loginMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In"}
           </button>
         </form>
 
