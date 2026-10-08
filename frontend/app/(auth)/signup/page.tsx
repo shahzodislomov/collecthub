@@ -33,8 +33,7 @@ export default function SignupPage() {
     signupMutation.mutate();
   };
 
-  const errorMessage = signupMutation.isError 
-    ? (signupMutation.error as any)?.response?.data?.message || (signupMutation.error as any)?.response?.data?.errors?.[0] || "Something went wrong"
+  const errorMessage = signupMutation.isError ? (signupMutation.error as any)?.response?.data?.message || (signupMutation.error as any)?.response?.data?.errors?.[0] || "Something went wrong"
     : null;
 
   return (

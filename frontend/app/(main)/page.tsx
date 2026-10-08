@@ -48,24 +48,24 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm">
-          <h3 className="font-semibold text-lg mb-2">My Collections</h3>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm">3 Active Collections</p>
+        <div className="p-8 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-white/60 dark:border-zinc-800/50 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:scale-[1.02] transition-transform duration-300">
+          <h3 className="font-semibold text-xl mb-2 text-zinc-900 dark:text-white">My Collections</h3>
+          <p className="text-zinc-500 dark:text-zinc-400">3 Active Collections</p>
         </div>
-        <div className="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm">
-          <h3 className="font-semibold text-lg mb-2">Daily Habits</h3>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm">2 Habits left today.</p>
+        <div className="p-8 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-white/60 dark:border-zinc-800/50 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:scale-[1.02] transition-transform duration-300">
+          <h3 className="font-semibold text-xl mb-2 text-zinc-900 dark:text-white">Daily Habits</h3>
+          <p className="text-zinc-500 dark:text-zinc-400">2 Habits left today.</p>
         </div>
-        <div className="p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-sm">
-          <h3 className="font-semibold text-lg mb-2">Recent Items</h3>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm">12 Items tracked total.</p>
+        <div className="p-8 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-white/60 dark:border-zinc-800/50 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:scale-[1.02] transition-transform duration-300">
+          <h3 className="font-semibold text-xl mb-2 text-zinc-900 dark:text-white">Recent Items</h3>
+          <p className="text-zinc-500 dark:text-zinc-400">12 Items tracked total.</p>
         </div>
       </div>
 
       {/* Fully Animated Draggable Kanban Board */}
-      <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 mt-8">
-        <h2 className="text-2xl font-bold tracking-tight mb-2">Your Workspace</h2>
-        <p className="text-zinc-500 dark:text-zinc-400">Drag and drop items to organize your workflow.</p>
+      <div className="pt-8 mt-12">
+        <h2 className="text-3xl font-black tracking-tighter mb-3">Your Workspace</h2>
+        <p className="text-zinc-500 dark:text-zinc-400 text-lg mb-8">Drag and drop items to organize your workflow.</p>
         <KanbanBoard />
       </div>
     </div>
