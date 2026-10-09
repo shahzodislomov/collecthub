@@ -16,8 +16,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
             CollectHub.
           </h1>
         </div>
-        <div className="flex-1 flex justify-center items-center pb-20">
-
+        <div className="flex justify-center items-center">
           <LineSidebar /> 
         </div>
       </aside>
