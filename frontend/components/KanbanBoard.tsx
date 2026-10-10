@@ -6,7 +6,7 @@ import { MoreHorizontal, Link as LinkIcon, Film, CheckSquare, Loader2 } from "lu
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
-type Item = { id: string; title: string; url?: string; type: "link" | "movie" | "habit" };
+type Item = { id: string; title: string; url?: string; imageUrl?: string; type: "link" | "movie" | "habit" };
 type Collection = { id: string; title: string; items: Item[] };
 
 const getIcon = (type: string) => {
@@ -159,6 +159,11 @@ export default function KanbanBoard() {
                             snapshot.isDragging ? "shadow-2xl ring-2 ring-blue-500/20 z-50 relative" : "hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700"
                           }`}
                         >
+                          {item.imageUrl && (
+                            <div className="mb-3 rounded-lg overflow-hidden h-32 relative shrink-0">
+                              <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                            </div>
+                          )}
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-zinc-900 dark:text-zinc-100 text-sm leading-snug break-words">

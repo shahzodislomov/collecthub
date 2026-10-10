@@ -3,13 +3,31 @@
 import { useAuthStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import KanbanBoard from "@/components/KanbanBoard";
 import CreateCollectionModal from "@/components/CreateCollectionModal";
 import CircularGallery from "@/components/CircularGallery";
 
+type Item = { id: string; title: string; url?: string; imageUrl?: string; type: string };
+type Collection = { id: string; title: string; items: Item[] };
+
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const router = useRouter();
+
+  const { data: collections } = useQuery({
+    queryKey: ["collections"],
+    queryFn: async () => {
+      const res = await api.get("/collections");
+      return res.data.collections as Collection[];
+    }
+  });
+
+  const galleryItems = collections
+    ?.flatMap((col) => col.items)
+    .filter((item) => item.imageUrl)
+    .map((item) => ({ image: item.imageUrl!, text: item.title }));
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -69,6 +87,7 @@ export default function DashboardPage() {
         <p className="text-zinc-500 dark:text-zinc-400 text-lg mb-8">Scroll or drag to explore your latest saved media.</p>
         <div style={{ height: '500px', position: 'relative' }} className="rounded-[2rem] overflow-hidden bg-zinc-900 shadow-2xl">
           <CircularGallery
+            items={galleryItems?.length ? galleryItems : undefined}
             bend={3}
             textColor="#ffffff"
             borderRadius={0.05}
