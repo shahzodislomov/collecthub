@@ -55,7 +55,7 @@ export default function AddItemModal() {
     <>
       {/* Floating Action Button */}
       <button
-        onClick={() => setIsOpen(false)}
+        onClick={() => setIsOpen(true)}
         className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-blue-500 to-violet-500 rounded-full shadow-lg shadow-blue-500/25 flex items-center justify-center text-white hover:scale-105 hover:shadow-blue-500/40 transition-all active:scale-95 z-40"
       >
         <Plus className="w-6 h-6" />
