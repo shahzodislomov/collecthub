@@ -31,3 +31,16 @@ export async function logHabit(req, res, next) {
         next(error);
     }
 }
+
+export async function getHabitLogs(req, res, next) {
+    try {
+        const { itemId } = req.params;
+        const logs = await prisma.habitLog.findMany({
+            where: { itemId, userId: req.userId },
+            orderBy: { date: "asc" }
+        });
+        res.status(200).json({ success: true, logs });
+    } catch (error) {
+        next(error);
+    }
+}
