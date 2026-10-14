@@ -1,0 +1,2 @@
+// Socket client placeholder
+export {};
