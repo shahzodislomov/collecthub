@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/api"
 import { useAuthStore } from "@/lib/store"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 

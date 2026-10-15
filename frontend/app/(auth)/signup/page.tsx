@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useAuthStore } from "@/lib/store";
-import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, CheckCircle2, Circle } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
+import { useAuthStore } from "@/lib/store";
+import { api } from "@/lib/api";
 
 export default function SignupPage() {
   const [username, setUsername] = useState("");
