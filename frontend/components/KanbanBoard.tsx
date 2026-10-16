@@ -5,6 +5,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea
 import { MoreHorizontal, Link as LinkIcon, Film, CheckSquare, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import Link from "next/link";
 
 type Item = { id: string; title: string; url?: string; imageUrl?: string; type: "link" | "movie" | "habit" };
 type Collection = { id: string; title: string; items: Item[] };
@@ -160,15 +161,17 @@ export default function KanbanBoard() {
                           }`}
                         >
                           {item.imageUrl && (
-                            <div className="mb-3 rounded-lg overflow-hidden h-32 relative shrink-0">
+                            <Link href={`/items/${item.id}`} className="block mb-3 rounded-lg overflow-hidden h-32 relative shrink-0 hover:opacity-90 transition-opacity">
                               <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
-                            </div>
+                            </Link>
                           )}
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-zinc-900 dark:text-zinc-100 text-sm leading-snug break-words">
-                                {item.title}
-                              </p>
+                              <Link href={`/items/${item.id}`} className="hover:text-blue-500 transition-colors">
+                                <p className="font-medium text-zinc-900 dark:text-zinc-100 text-sm leading-snug break-words">
+                                  {item.title}
+                                </p>
+                              </Link>
                               {item.url && (
                                 <p className="text-xs text-blue-500 mt-1 truncate max-w-[200px]">
                                   {new URL(item.url).hostname}
@@ -177,9 +180,9 @@ export default function KanbanBoard() {
                             </div>
                             <div className="flex items-center gap-2 shrink-0 text-zinc-400">
                               {getIcon(item.type)}
-                              <button className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
+                              <Link href={`/items/${item.id}`} className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
                                 <MoreHorizontal className="w-4 h-4" />
-                              </button>
+                              </Link>
                             </div>
                           </div>
                         </div>
