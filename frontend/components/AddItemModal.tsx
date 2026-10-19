@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Link as LinkIcon, Film, CheckSquare, Loader2 } from "lucide-react";
+import { Plus, X, Link as LinkIcon, Film, Gamepad2, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 
 export default function AddItemModal() {
   const [isOpen, setIsOpen] = useState(false);
-  const [type, setType] = useState<"link" | "movie" | "habit">("link");
+  const [type, setType] = useState<"link" | "movie" | "game">("link");
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [collectionId, setCollectionId] = useState("");
@@ -93,7 +93,7 @@ export default function AddItemModal() {
                 {[
                   { id: "link", icon: LinkIcon, label: "Link" },
                   { id: "movie", icon: Film, label: "Movie" },
-                  { id: "habit", icon: CheckSquare, label: "Habit" },
+                  { id: "game", icon: Gamepad2, label: "Game" },
                 ].map((t) => (
                   <button
                     key={t.id}
@@ -151,7 +151,7 @@ export default function AddItemModal() {
                       required
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder={type === "movie" ? "e.g., Dune: Part Two" : "e.g., Read 10 Pages"}
+                      placeholder={type === "movie" ? "e.g., Dune: Part Two" : type === "game" ? "e.g., Elden Ring" : "e.g., Note or Task"}
                       className="w-full px-4 py-2.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>

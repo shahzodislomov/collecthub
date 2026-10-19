@@ -31,7 +31,6 @@ interface LineSidebarProps {
 const NAV_ITEMS = [
   { name: "Dashboard", href: "/" },
   { name: "My Collections", href: "/collections" },
-  { name: "Habit Tracker", href: "/habits" },
   { name: "Profile", href: "/profile" },
   { name: "Settings", href: "/settings" },
 ];

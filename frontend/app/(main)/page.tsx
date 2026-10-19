@@ -72,8 +72,8 @@ export default function DashboardPage() {
           <p className="text-zinc-500 dark:text-zinc-400">3 Active Collections</p>
         </div>
         <div className="p-8 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-white/60 dark:border-zinc-800/50 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:scale-[1.02] transition-transform duration-300">
-          <h3 className="font-semibold text-xl mb-2 text-zinc-900 dark:text-white">Daily Habits</h3>
-          <p className="text-zinc-500 dark:text-zinc-400">2 Habits left today.</p>
+          <h3 className="font-semibold text-xl mb-2 text-zinc-900 dark:text-white">Bookmarks & Media</h3>
+          <p className="text-zinc-500 dark:text-zinc-400">Organized in your hub.</p>
         </div>
         <div className="p-8 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-white/60 dark:border-zinc-800/50 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:scale-[1.02] transition-transform duration-300">
           <h3 className="font-semibold text-xl mb-2 text-zinc-900 dark:text-white">Recent Items</h3>

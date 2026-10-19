@@ -2,19 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { MoreHorizontal, Link as LinkIcon, Film, CheckSquare, Loader2 } from "lucide-react";
+import { MoreHorizontal, Link as LinkIcon, Film, Loader2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import Link from "next/link";
 
-type Item = { id: string; title: string; url?: string; imageUrl?: string; type: "link" | "movie" | "habit" };
+type Item = { id: string; title: string; url?: string; imageUrl?: string; type: "link" | "movie" | "game" };
 type Collection = { id: string; title: string; items: Item[] };
 
 const getIcon = (type: string) => {
   switch (type) {
     case "movie": return <Film className="w-4 h-4 text-violet-500" />;
     case "link": return <LinkIcon className="w-4 h-4 text-blue-500" />;
-    case "habit": return <CheckSquare className="w-4 h-4 text-emerald-500" />;
     default: return null;
   }
 };

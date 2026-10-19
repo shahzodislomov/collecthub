@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   Link as LinkIcon,
   Film,
-  CheckSquare,
   Gamepad2,
   Loader2,
   Sparkles,
@@ -19,7 +18,7 @@ export default function NewItemPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [type, setType] = useState<"link" | "movie" | "habit" | "game">("link");
+  const [type, setType] = useState<"link" | "movie" | "game">("link");
   const [collectionId, setCollectionId] = useState("");
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
@@ -99,7 +98,6 @@ export default function NewItemPage() {
   const types = [
     { id: "link", icon: LinkIcon, label: "Link" },
     { id: "movie", icon: Film, label: "Movie" },
-    { id: "habit", icon: CheckSquare, label: "Habit" },
     { id: "game", icon: Gamepad2, label: "Game" },
   ] as const;
 
@@ -115,7 +113,7 @@ export default function NewItemPage() {
         </button>
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Create New Item</h1>
-          <p className="text-xs text-zinc-500">Save a link, track a habit, or log movies & games into your collections.</p>
+          <p className="text-xs text-zinc-500">Save a link or log movies & games into your collections.</p>
         </div>
       </div>
 
@@ -215,8 +213,6 @@ export default function NewItemPage() {
               placeholder={
                 type === "movie"
                   ? "e.g., Dune: Part Two"
-                  : type === "habit"
-                  ? "e.g., Read 15 mins daily"
                   : type === "game"
                   ? "e.g., Elden Ring"
                   : "e.g., Awesome Article"

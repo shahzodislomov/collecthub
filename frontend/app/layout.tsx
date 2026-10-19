@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "CollectHub",
-  description: "Bookmarks, Habits, Watchlists, and Reviews in one place.",
+  description: "Bookmarks, Watchlists, and Reviews in one place.",
 };
 
 export default function RootLayout({

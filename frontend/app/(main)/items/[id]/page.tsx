@@ -13,12 +13,10 @@ import {
   X,
   Link as LinkIcon,
   Film,
-  CheckSquare,
   Gamepad2,
   Calendar,
   Folder,
   Loader2,
-  Flame,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -51,16 +49,6 @@ export default function ItemDetailPage({ params }: PageProps) {
     },
   });
 
-  // Fetch Habit Logs if type === 'habit'
-  const { data: habitLogsData, refetch: refetchHabitLogs } = useQuery({
-    queryKey: ["habit-logs", id],
-    queryFn: async () => {
-      const res = await api.get(`/items/${id}/habit-logs`);
-      return res.data.logs as Array<{ id: string; date: string; completed: boolean }>;
-    },
-    enabled: data?.type === "habit",
-  });
-
   // Update Item Mutation
   const updateMutation = useMutation({
     mutationFn: async () => {
@@ -87,20 +75,6 @@ export default function ItemDetailPage({ params }: PageProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["collections"] });
       router.push("/");
-    },
-  });
-
-  // Habit Check-in Mutation
-  const habitLogMutation = useMutation({
-    mutationFn: async (completed: boolean) => {
-      const res = await api.post(`/items/${id}/habit-logs`, {
-        date: new Date().toISOString(),
-        completed,
-      });
-      return res.data;
-    },
-    onSuccess: () => {
-      refetchHabitLogs();
     },
   });
 
@@ -131,19 +105,12 @@ export default function ItemDetailPage({ params }: PageProps) {
     switch (type) {
       case "movie":
         return <Film className="h-4 w-4 text-violet-500" />;
-      case "habit":
-        return <CheckSquare className="h-4 w-4 text-emerald-500" />;
       case "game":
         return <Gamepad2 className="h-4 w-4 text-amber-500" />;
       default:
         return <LinkIcon className="h-4 w-4 text-blue-500" />;
     }
   };
-
-  const todayStr = new Date().toISOString().split("T")[0];
-  const isHabitCompletedToday = habitLogsData?.some(
-    (log) => log.date.startsWith(todayStr) && log.completed
-  );
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -302,66 +269,6 @@ export default function ItemDetailPage({ params }: PageProps) {
                 </p>
               ) : (
                 <p className="text-sm italic text-zinc-400">No description provided.</p>
-              )}
-            </div>
-          )}
-
-          {/* Habit Tracker Section */}
-          {data.type === "habit" && (
-            <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/60">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                    <Flame className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 text-sm">Today&apos;s Habit Status</h4>
-                    <p className="text-xs text-zinc-500">
-                      {isHabitCompletedToday ? "Completed for today! Keep up the momentum." : "Not completed yet today."}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => habitLogMutation.mutate(!isHabitCompletedToday)}
-                  disabled={habitLogMutation.isPending}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                    isHabitCompletedToday
-                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                      : "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:opacity-90"
-                  }`}
-                >
-                  {habitLogMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : isHabitCompletedToday ? (
-                    <>
-                      <Check className="h-4 w-4" /> Completed
-                    </>
-                  ) : (
-                    "Mark Completed"
-                  )}
-                </button>
-              </div>
-
-              {/* Log History */}
-              {habitLogsData && habitLogsData.length > 0 && (
-                <div className="mt-4">
-                  <h5 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">Recent Logs</h5>
-                  <div className="flex flex-wrap gap-2">
-                    {habitLogsData.slice(-14).map((log) => (
-                      <div
-                        key={log.id}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-medium border ${
-                          log.completed
-                            ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400"
-                            : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-400"
-                        }`}
-                      >
-                        {new Date(log.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                      </div>
-                    ))}
-                  </div>
-                </div>
               )}
             </div>
           )}
