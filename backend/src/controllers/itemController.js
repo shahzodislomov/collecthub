@@ -25,7 +25,7 @@ const itemFields = {
 const createItemSchema = z.object({
     ...itemFields,
     collectionId: z.string().uuid("Collection ID must be a valid UUID"),
-    type: z.enum(["link", "habit", "movie", "game"]),
+    type: z.enum(["link", "movie", "game"]),
     tags: z.array(z.string()).optional(),
     metadata: z.record(z.string()).optional(),
 }).refine(data => data.title || data.url, {

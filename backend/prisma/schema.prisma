@@ -21,7 +21,6 @@ model User {
   followers Follows[] @relation("following")
   following Follows[] @relation("follower")
   shares    Share[]
-  habitLogs HabitLog[]
 }
 
 model Collection {
@@ -59,7 +58,6 @@ model Item {
   type      String     @default("link")
   metadata  Json?      
   tags      Tag[]
-  habitLogs HabitLog[]
 }
 
 model Review {
@@ -103,18 +101,4 @@ model Tag {
   id    String @id @default(uuid())
   name  String @unique
   items Item[]
-}
-model HabitLog {
-  id        String   @id @default(uuid())
-  itemId    String
-  userId    String
-  date      DateTime 
-  completed Boolean  @default(false)
-  note      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@unique([itemId, userId, date])
-  @@index([userId])
 }
