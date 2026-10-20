@@ -1,9 +1,8 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import {
   ArrowLeft,
   ExternalLink,
@@ -19,6 +18,7 @@ import {
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
+import { useDeleteItem, useItem, useUpdateItem } from "@/hooks/useItems";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -35,48 +35,18 @@ export default function ItemDetailPage({ params }: PageProps) {
   const [url, setUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
 
-  // Fetch Item
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["item", id],
-    queryFn: async () => {
-      const res = await api.get(`/item/${id}`);
-      const item = res.data.item;
-      setTitle(item.title || "");
-      setDescription(item.description || "");
-      setUrl(item.url || "");
-      setImageUrl(item.imageUrl || "");
-      return item;
-    },
-  });
+  const { data, isLoading, error } = useItem(id);
+  const updateMutation = useUpdateItem();
+  const deleteMutation = useDeleteItem();
 
-  // Update Item Mutation
-  const updateMutation = useMutation({
-    mutationFn: async () => {
-      const res = await api.patch(`/item/${id}`, {
-        title,
-        description,
-        url: url || undefined,
-        imageUrl: imageUrl || undefined,
-      });
-      return res.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["item", id] });
-      queryClient.invalidateQueries({ queryKey: ["collections"] });
-      setIsEditing(false);
-    },
-  });
-
-  // Delete Item Mutation
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await api.delete(`/item/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["collections"] });
-      router.push("/");
-    },
-  });
+  useEffect(() => {
+    if (data) {
+      setTitle(data.title || "");
+      setDescription(data.description || "");
+      setUrl(data.url || "");
+      setImageUrl(data.imageUrl || "");
+    }
+  }, [data]);
 
   if (isLoading) {
     return (
@@ -127,7 +97,22 @@ export default function ItemDetailPage({ params }: PageProps) {
           {isEditing ? (
             <>
               <button
-                onClick={() => updateMutation.mutate()}
+                onClick={() => {
+                  updateMutation.mutate(
+                    {
+                      id,
+                      data: {
+                        title,
+                        description,
+                        url: url || undefined,
+                        imageUrl: imageUrl || undefined,
+                      },
+                    },
+                    {
+                      onSuccess: () => setIsEditing(false),
+                    }
+                  );
+                }}
                 disabled={updateMutation.isPending}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors"
               >
@@ -152,7 +137,9 @@ export default function ItemDetailPage({ params }: PageProps) {
               <button
                 onClick={() => {
                   if (confirm("Are you sure you want to delete this item?")) {
-                    deleteMutation.mutate();
+                    deleteMutation.mutate(id, {
+                      onSuccess: () => router.push("/"),
+                    });
                   }
                 }}
                 disabled={deleteMutation.isPending}

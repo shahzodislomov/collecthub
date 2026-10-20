@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -13,6 +13,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { useCollections } from "@/hooks/useCollections";
+import { useCreateItem } from "@/hooks/useItems";
 
 export default function NewItemPage() {
   const router = useRouter();
@@ -28,22 +30,29 @@ export default function NewItemPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   // Fetch collections
-  const { data: collections, isLoading: isLoadingCollections } = useQuery({
-    queryKey: ["collections"],
-    queryFn: async () => {
-      const res = await api.get("/collections");
-      const list = res.data.collections || [];
-      if (list.length > 0 && !collectionId) {
-        setCollectionId(list[0].id);
-      }
-      return list;
-    },
-  });
+  // const { data: collections, isLoading: isLoadingCollections } = useQuery({
+  //   queryKey: ["collections"],
+  //   queryFn: async () => {
+  //     const res = await api.get("/collections");
+  //     const list = res.data.collections || []; 
+  //     if (list.length > 0 && !collectionId) {
+  //       setCollectionId(list[0].id);
+  //     }
+  //     return list;
+  //   },
+  // });
 
+  const {data: collections, isLoading: isLoadingCollections} = useCollections()
+  useEffect(() => {
+    if (collections && collections.length > 0 && !collectionId) {
+      setCollectionId(collections[0].id)
+    }
+  }, [collections,collectionId]);
   // Create mutation
-  const createItemMutation = useMutation({
-    mutationFn: async () => {
-      setErrorMsg("");
+  const createItemMutation = useCreateItem()
+  // const createItemMutation = useMutation({
+  //   mutationFn: async () => {
+  //     setErrorMsg("");
       const tags = tagsInput
         .split(",")
         .map((t) => t.trim())
@@ -56,27 +65,27 @@ export default function NewItemPage() {
         description: description.trim() || undefined,
         url: url.trim() || undefined,
         imageUrl: imageUrl.trim() || undefined,
-        tags: tags.length > 0 ? tags : undefined,
+        tags: tags?.length > 0 ? tags : undefined,
       };
 
-      const res = await api.post("/create", payload);
-      return res.data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["collections"] });
-      queryClient.invalidateQueries({ queryKey: ["items"] });
-      if (data?.item?.id) {
-        router.push(`/items/${data.item.id}`);
-      } else {
-        router.push("/");
-      }
-    },
-    onError: (err: any) => {
-      setErrorMsg(
-        err?.response?.data?.message || err?.message || "Failed to create item. Please check the inputs."
-      );
-    },
-  });
+  //     const res = await api.post("/create", payload);
+  //     return res.data;
+  //   },
+  //   onSuccess: (data) => {
+  //     queryClient.invalidateQueries({ queryKey: ["collections"] });
+  //     queryClient.invalidateQueries({ queryKey: ["items"] });
+  //     if (data?.item?.id) {
+  //       router.push(`/items/${data.item.id}`);
+  //     } else {
+  //       router.push("/");
+  //     }
+  //   },
+  //   onError: (err: any) => {
+  //     setErrorMsg(
+  //       err?.response?.data?.message || err?.message || "Failed to create item. Please check the inputs."
+  //     );
+  //   },
+  // });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,7 +101,10 @@ export default function NewItemPage() {
       setErrorMsg("Please enter either a URL or a title.");
       return;
     }
-    createItemMutation.mutate();
+    createItemMutation.mutate(payload, {
+      onSuccess: (newItem) => router.push(`/item/${newItem.id}`),
+      onError: (err: any) => setErrorMsg(err?.response?.data?.message || err?.message || "Failed to create item. Please check the inputs."),
+    });
   };
 
   const types = [
